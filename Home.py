@@ -53,12 +53,15 @@ def load_css():
 def create_navbar():
     st.markdown(
         """
+        
         <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #4267B2;">
             <a class="navbar-brand" href="#" target="_blank">
                 <img src="https://www.4th-ir.com/favicon.ico" alt="4th-ir logo">
                 4th-ir POC Repo
             </a>
         </nav>
+
+        <marquee><div class="card card-success alert-success">Check Sidebar for Projects</div></marquee>
         """,
         unsafe_allow_html=True
     )
