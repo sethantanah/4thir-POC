@@ -61,7 +61,7 @@ def create_navbar():
             </a>
         </nav>
 
-        <marquee><div class="card card-success alert-success">Check Sidebar for Projects</div></marquee>
+        <div class="card card-success alert-success"><marquee>Check Sidebar for Projects</marquee></div>
         """,
         unsafe_allow_html=True
     )
