@@ -14,6 +14,26 @@ def load_css():
         <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link rel="icon" href="https://www.4th-ir.com/favicon.ico">
+        <!-- Primary Meta Tags -->
+<title>4thir-POC-repo</title>
+<meta name="title" content="4thir-POC-repo" />
+<meta name="description" content="view our proof of concepts" />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://4thir-poc-repositoty.streamlit.app/" />
+<meta property="og:title" content="4thir-POC-repo" />
+<meta property="og:description" content="view our proof of concepts" />
+<meta property="og:image" content="https://www.4th-ir.com/favicon.ico" />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content="https://4thir-poc-repositoty.streamlit.app/" />
+<meta property="twitter:title" content="4thir-POC-repo" />
+<meta property="twitter:description" content="view our proof of concepts" />
+<meta property="twitter:image" content="https://www.4th-ir.com/favicon.ico" />
+
+<!-- Meta Tags Generated with https://metatags.io -->
         """,
         unsafe_allow_html=True
     )
