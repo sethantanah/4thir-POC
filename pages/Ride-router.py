@@ -74,7 +74,9 @@ class StaffTransportOptimizer:
             'lon': -0.143551646497661
         }
         self.MAX_PASSENGERS = 4
-        
+        self.MIN_PASSENGERS = 3  # Minimum passengers per car
+        self.COST_PER_KM = 2.5  # Cost per kilometer
+
     def load_sample_data(self):
         """Load sample staff location data for Accra region"""
         return pd.DataFrame({
@@ -92,23 +94,50 @@ class StaffTransportOptimizer:
         })
 
     def create_clusters(self, staff_data, eps_km=2):
-        """Create clusters based on staff locations"""
+        """Create clusters based on staff locations with minimum size constraint"""
         if staff_data is None or len(staff_data) == 0:
             return None
         
         eps_degrees = eps_km / 111
         coords = staff_data[['latitude', 'longitude']].values
-        db = DBSCAN(eps=eps_degrees, min_samples=1).fit(coords)
+        
+        # Adjust min_samples to ensure minimum cluster size
+        db = DBSCAN(eps=eps_degrees, min_samples=self.MIN_PASSENGERS).fit(coords)
         staff_data['cluster'] = db.labels_
+        
+        # Handle outliers (points labeled as -1)
+        outliers = staff_data[staff_data['cluster'] == -1]
+        if not outliers.empty:
+            # Assign outliers to nearest valid cluster
+            for idx, row in outliers.iterrows():
+                distances = []
+                for cluster_id in staff_data['cluster'].unique():
+                    if cluster_id != -1:
+                        cluster_points = staff_data[staff_data['cluster'] == cluster_id]
+                        avg_dist = cluster_points.apply(
+                            lambda x: geodesic(
+                                (row['latitude'], row['longitude']),
+                                (x['latitude'], x['longitude'])
+                            ).km,
+                            axis=1
+                        ).mean()
+                        distances.append((cluster_id, avg_dist))
+                
+                if distances:
+                    nearest_cluster = min(distances, key=lambda x: x[1])[0]
+                    staff_data.at[idx, 'cluster'] = nearest_cluster
+        
         return staff_data
 
     def optimize_routes(self, staff_data):
-        """Optimize routes for each cluster"""
+        """Optimize routes with capacity and cost constraints"""
         routes = defaultdict(list)
+        route_counter = 0
         
         for cluster_id in staff_data['cluster'].unique():
             cluster_group = staff_data[staff_data['cluster'] == cluster_id].copy()
             
+            # Calculate distances to office and between points
             cluster_group['distance_to_office'] = cluster_group.apply(
                 lambda row: geodesic(
                     (row['latitude'], row['longitude']),
@@ -117,71 +146,142 @@ class StaffTransportOptimizer:
                 axis=1
             )
             
-            sorted_group = cluster_group.sort_values('distance_to_office', ascending=False)
-            
-            for i in range(0, len(sorted_group), self.MAX_PASSENGERS):
-                car_group = sorted_group.iloc[i:i + self.MAX_PASSENGERS]
-                routes[f'Cluster {cluster_id} - Car {i//self.MAX_PASSENGERS + 1}'] = car_group.to_dict('records')
+            while len(cluster_group) >= self.MIN_PASSENGERS:
+                # Start with furthest person from office
+                current_route = []
+                remaining = cluster_group.copy()
                 
+                # Get furthest person
+                start_person = remaining.nlargest(1, 'distance_to_office').iloc[0]
+                current_route.append(start_person.to_dict())
+                remaining = remaining.drop(start_person.name)
+                
+                # Add closest people until route is full or minimum met
+                while len(current_route) < self.MAX_PASSENGERS and not remaining.empty:
+                    last_point = current_route[-1]
+                    
+                    # Calculate distances to remaining points
+                    remaining['temp_distance'] = remaining.apply(
+                        lambda row: geodesic(
+                            (last_point['latitude'], last_point['longitude']),
+                            (row['latitude'], row['longitude'])
+                        ).km,
+                        axis=1
+                    )
+                    
+                    next_person = remaining.nsmallest(1, 'temp_distance').iloc[0]
+                    current_route.append(next_person.to_dict())
+                    remaining = remaining.drop(next_person.name)
+                    
+                    if len(current_route) >= self.MIN_PASSENGERS:
+                        break
+                
+                if len(current_route) >= self.MIN_PASSENGERS:
+                    route_name = f'Route {route_counter + 1}'
+                    routes[route_name] = current_route
+                    route_counter += 1
+                    # Remove assigned staff from cluster group
+                    assigned_ids = [p['staff_id'] for p in current_route]
+                    cluster_group = cluster_group[~cluster_group['staff_id'].isin(assigned_ids)]
+                else:
+                    # Handle remaining staff by adding to existing routes if possible
+                    break
+            
+            # Handle any remaining staff
+            if len(cluster_group) > 0:
+                for _, row in cluster_group.iterrows():
+                    for route_name, route_group in routes.items():
+                        if len(route_group) < self.MAX_PASSENGERS:
+                            route_group.append(row.to_dict())
+                            break
+        
         return routes
 
-    def create_map(self, routes):
-        """Create an interactive map with dashed route lines"""
-        m = folium.Map(
-            location=[self.office_location['lat'], self.office_location['lon']],
-            zoom_start=13,
-            tiles="cartodbpositron"
-        )
-        
-        # Add office marker
-        folium.Marker(
-            [self.office_location['lat'], self.office_location['lon']],
-            popup='Office',
-            icon=folium.Icon(color='red', icon='building', prefix='fa'),
-            tooltip="Office Location"
-        ).add_to(m)
-        
-        colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue']
-        
-        for route_idx, (route_name, group) in enumerate(routes.items()):
-            color = colors[route_idx % len(colors)]
-            route_group = folium.FeatureGroup(name=route_name)
+    def calculate_route_metrics(self, route):
+        """Calculate total distance and cost for a route"""
+        if not route:
+            return 0, 0
             
-            # Create coordinates list for the route
-            coordinates = [[staff['latitude'], staff['longitude']] for staff in group]
-            coordinates.append([self.office_location['lat'], self.office_location['lon']])
-            
-            # Add dashed line for route
-            folium.PolyLine(
-                coordinates,
-                weight=2,
-                color=color,
-                opacity=0.6,
-                dash_array='5, 10',  # Create dashed line effect
-                popup=route_name
-            ).add_to(route_group)
-            
-            # Add staff markers
-            for staff in group:
-                folium.CircleMarker(
-                    [staff['latitude'], staff['longitude']],
-                    radius=6,
-                    popup=f"""
-                    <b>{staff['name']}</b><br>
-                    Address: {staff['address']}<br>
-                    Distance to office: {staff['distance_to_office']:.2f} km
-                    """,
-                    color=color,
-                    fill=True,
-                    fill_opacity=0.7,
-                    tooltip=staff['name']
-                ).add_to(route_group)
-            
-            route_group.add_to(m)
+        total_distance = 0
+        points = [(p['latitude'], p['longitude']) for p in route]
+        points.append((self.office_location['lat'], self.office_location['lon']))
         
-        folium.LayerControl().add_to(m)
-        return m
+        for i in range(len(points) - 1):
+            distance = geodesic(points[i], points[i + 1]).km
+            total_distance += distance
+            
+        return total_distance, total_distance * self.COST_PER_KM
 
+    def create_map(self, routes):
+        """Create an interactive map with optimized route visualization"""
+        try:
+            m = folium.Map(
+                location=[self.office_location['lat'], self.office_location['lon']],
+                zoom_start=13,
+                tiles="cartodbpositron"
+            )
+            
+            # Add office marker
+            folium.Marker(
+                [self.office_location['lat'], self.office_location['lon']],
+                popup='Office',
+                icon=folium.Icon(color='red', icon='building', prefix='fa'),
+                tooltip="Office Location"
+            ).add_to(m)
+            
+            colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue']
+            
+            for route_idx, (route_name, group) in enumerate(routes.items()):
+                color = colors[route_idx % len(colors)]
+                route_group = folium.FeatureGroup(name=route_name)
+                
+                # Create coordinates list for the route
+                coordinates = [[staff['latitude'], staff['longitude']] for staff in group]
+                coordinates.append([self.office_location['lat'], self.office_location['lon']])
+                
+                # Calculate route metrics
+                total_distance, total_cost = self.calculate_route_metrics(group)
+                
+                # Add route line
+                folium.PolyLine(
+                    coordinates,
+                    weight=2,
+                    color=color,
+                    opacity=0.8,
+                    dash_array='5, 10',
+                    popup=f"""
+                    <b>{route_name}</b><br>
+                    Passengers: {len(group)}<br>
+                    Distance: {total_distance:.2f} km<br>
+                    Cost: ${total_cost:.2f}
+                    """
+                ).add_to(route_group)
+                
+                # Add staff markers
+                for idx, staff in enumerate(group, 1):
+                    folium.CircleMarker(
+                        [staff['latitude'], staff['longitude']],
+                        radius=6,
+                        popup=f"""
+                        <b>{staff['name']}</b><br>
+                        Address: {staff['address']}<br>
+                        Stop #{idx}<br>
+                        Distance to office: {staff['distance_to_office']:.2f} km
+                        """,
+                        color=color,
+                        fill=True,
+                        fill_opacity=0.7,
+                        tooltip=f"Stop #{idx}: {staff['name']}"
+                    ).add_to(route_group)
+                
+                route_group.add_to(m)
+            
+            folium.LayerControl().add_to(m)
+            return m
+            
+        except Exception as e:
+            st.error(f"Error creating map: {str(e)}")
+            return None
 def init_session_state():
     """Initialize session state variables"""
     if 'staff_data' not in st.session_state:
