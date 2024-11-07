@@ -54,12 +54,6 @@ def load_css():
                 /* Hide your specific div class, replace class name with the one you identified */
                 .st-emotion-cache-uf99v8 {display: none;}
 
-          [data-testid="stSidebar"]{
-        visibility: hidden;
-    }
- section[data-testid="stSidebar"][aria-expanded="true"]{
-            display: none;
-        }
 
           .hero-section {
             background: linear-gradient(to right, #0d6efd, #6610f2);
