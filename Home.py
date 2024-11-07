@@ -130,8 +130,8 @@ def create_navbar():
     st.html(
         """
              
-        <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #4267B2;">
-            <a class="navbar-brand" href="#" target="_blank">
+        <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-white text-bold shadow-sm">
+            <a class="navbar-brand text-primary" href="#" target="_blank">
                 <img src="https://www.4th-ir.com/favicon.ico" alt="4th-ir logo">
                 4th-ir POC Repo
             </a>
@@ -140,7 +140,7 @@ def create_navbar():
         <div class="hero-section">
             <div class="container text-center">
                 <h1 class="display-4 text-white mb-3">4th-IR POC Page</h1>
-                <p class="lead text-white">Exploring the future of AI through innovative applications</p>
+                <!--<p class="lead text-white">Exploring the future of AI through innovative applications</p>-->
             </div>
         </div>
     <div id="projects">
