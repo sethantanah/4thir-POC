@@ -110,7 +110,6 @@ def main():
         "Hand-Written-Text-Detector": "alert-warning",
         "Loan-Document-Analyzer": "alert-info",
         "Medical-doc-analyzer": "alert-danger",
-        "Optical-Character-Recognition": "alert btn-info",
         "Ride-router" :"alert  btn-warning"
     }
     
