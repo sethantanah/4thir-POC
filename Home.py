@@ -47,7 +47,7 @@ def load_css():
     st.markdown(
         """
         <style>
-            /* Hide the Streamlit header and menu */
+        /* Hide the Streamlit header and menu */
         header {visibility: hidden;}
                 /* Optionally, hide the footer */
                 .streamlit-footer {display: none;}
@@ -55,9 +55,10 @@ def load_css():
                 .st-emotion-cache-uf99v8 {display: none;}
 
 
-          .hero-section {
+        .hero-section {
             background: linear-gradient(to right, #0d6efd, #6610f2);
             padding: 4rem 0;
+            width: 100%;
         }
         .feature-icon {
             width: 4rem;
@@ -98,16 +99,7 @@ def load_css():
             font-size: 0.875rem;
             color: #6c757d;
         }
-         .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: -100px;
-        }
-        .navbar-brand img {
-            height: 30px;
-            margin-right: 10px;
-        }
+      
         .nav-link {
             font-weight: 500;
             padding: 0.5rem 1rem !important;
@@ -137,47 +129,40 @@ def load_css():
 def create_navbar():
     st.html(
         """
-     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg shadow-sm">
-        <div class="container">
-          <div class="navbar-brand d-flex align-items-center">
-            <img src="https://www.4th-ir.com/favicon.ico" alt="4th-ir logo" style="height: 30px; margin-right: 10px;">
-            <span>4th-ir POC Repo</span>
-        </div>
-        
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-16 6h16"/>
-                </svg>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link px-3 text-primary" href="#projects">Projects</a>
-                    </li>
-                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
-                        <a class="btn btn-primary text-white px-4" href="#get-started">Get Started</a>
-                    </li>
-                </ul>
+             
+        <nav class="navbar fixed-top navbar-expand-lg navbar-dark" style="background-color: #4267B2;">
+            <a class="navbar-brand" href="#" target="_blank">
+                <img src="https://www.4th-ir.com/favicon.ico" alt="4th-ir logo">
+                4th-ir POC Repo
+            </a>
+        </nav>
+
+        <div class="hero-section">
+            <div class="container text-center">
+                <h1 class="display-4 text-white mb-3">4th-IR POC Page</h1>
+                <p class="lead text-white">Exploring the future of AI through innovative applications</p>
             </div>
         </div>
-    </nav>
-        """
-    )
-def create_hero_section():
-    st.html(
-        """
-   <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="container text-center">
-            <h1 class="display-4 text-white mb-3">4th-IR POC Page</h1>
-            <p class="lead text-white">Exploring the future of AI through innovative applications</p>
-        </div>
-    </div>
     <div id="projects">
     </div>
-      """
+
+    
+        """
     )
+# def create_hero_section():
+#     st.html(
+#         """
+#    <!-- Hero Section -->
+#     <div class="hero-section">
+#         <div class="container text-center">
+#             <h1 class="display-4 text-white mb-3">4th-IR POC Page</h1>
+#             <p class="lead text-white">Exploring the future of AI through innovative applications</p>
+#         </div>
+#     </div>
+#     <div id="projects">
+#     </div>
+#       """
+#     )
 
 def create_project_card(project_name, details, target="_blank"):
     return f"""
@@ -221,7 +206,7 @@ def main():
     setup_page_config()
     load_css()
     create_navbar()
-    create_hero_section()
+    # create_hero_section()
 
     
     projects = {
